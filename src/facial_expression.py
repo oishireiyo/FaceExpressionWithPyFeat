@@ -1,5 +1,6 @@
 # Standard python modules
 import os
+import sys
 import math
 
 # Logging
@@ -69,6 +70,7 @@ class FacialExpressionAnalysis(object):
     return results
 
   def remove_appendix(self, file_path: str) -> str:
+    file_path = file_path.split('/')[-1]
     return ''.join(file_path.split('.')[:-1])
 
   def read_frame(self, video_capture, iframe: int, image_path: str) -> bool:
@@ -78,12 +80,17 @@ class FacialExpressionAnalysis(object):
     return ret
 
   def detect_video_with_images(self, video_path: str, interval_in_sec: float=1.0) -> pd.DataFrame:
-    results = Fex()
+    if not os.path.isfile(video_path):
+      logger.error('No such video file was found.')
+      sys.exit(1)
+
     video_capture = cv2.VideoCapture(video_path)
     nframes = int(video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
     fps = math.ceil(video_capture.get(cv2.CAP_PROP_FPS))
+
+    results = Fex()
     for iframe in range(0, nframes, int(fps * interval_in_sec)):
-      image_path = video_path + '_frame_%d.png' % (iframe)
+      image_path = '../deliverables/' + self.remove_appendix(video_path) + '_frame_%d.png' % (iframe)
       if self.read_frame(video_capture=video_capture, iframe=iframe, image_path=image_path):
         _results = self.detect_image(image_path=image_path)
         if not _results.isna().any().any():
@@ -108,29 +115,30 @@ class FacialExpressionAnalysis(object):
   def get_moving_average(self, values: pd.Series, window: int):
     return values.rolling(window=window, min_periods=1).mean()
 
-  def make_plots(self, results: pd.DataFrame, columns: list[str]) -> None:
+  def make_plots(self, results: pd.DataFrame, columns: list[str], plot_name: str) -> None:
     Xs = results['frame']
     for column in columns:
       Ys = results[column]
-      Ys = self.get_moving_average(values=Ys, window=10)
+      # Ys = self.get_moving_average(values=Ys, window=10)
       plt.plot(Xs, Ys, label=column)
 
     plt.title('Emotion expectations')
     plt.xlabel('Frame number')
     plt.ylabel('Probabilities')
     plt.legend()
-    plt.savefig('hoge.png')
+    plt.savefig(plot_name)
 
-  def save_as_csv(self, results: pd.DataFrame, csvfile: str='output.csv'):
+  def save_as_csv(self, results: pd.DataFrame, csvfile: str='../deliverables/output.csv'):
     results.to_csv(csvfile, index=False)
 
-  def read_feat(self, csvfile: str):
-    return read_feat(csvfile)
+  def read_results(self, csvfile: str):
+    results = read_feat(csvfile)
+    return results
 
 if __name__ == '__main__':
   obj = FacialExpressionAnalysis()
   obj.set_detector()
-  results = obj.detect_video_with_images(video_path='../assets/aho.mp4', interval_in_sec=1.0)
-  # obj.make_plots(results=results, columns=['anger', 'disgust', 'fear', 'happiness', 'sadness', 'surprise', 'neutral'])
-  obj.make_plots(results=results, columns=['happiness'])
-  obj.save_as_csv(results=results, csvfile='output.csv')
+  results = obj.detect_video_with_images(video_path='../assets/aho.mp4', interval_in_sec=5.0)
+  # results = obj.read_results(csvfile='../deliverables/output.csv')
+  obj.make_plots(results=results, columns=['anger', 'disgust', 'fear', 'happiness', 'sadness', 'surprise', 'neutral'])
+  obj.save_as_csv(results=results, csvfile='../deliverables/output.csv')
