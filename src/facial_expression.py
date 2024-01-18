@@ -116,16 +116,19 @@ class FacialExpressionAnalysis(object):
     return values.rolling(window=window, min_periods=1).mean()
 
   def make_plots(self, results: pd.DataFrame, columns: list[str], plot_name: str) -> None:
+    plt.figure()
+
     Xs = results['frame']
     for column in columns:
       Ys = results[column]
       # Ys = self.get_moving_average(values=Ys, window=10)
       plt.plot(Xs, Ys, label=column)
 
-    plt.title('Emotion expectations')
+    plt.title('Expectations')
     plt.xlabel('Frame number')
     plt.ylabel('Probabilities')
     plt.legend()
+    plt.grid(True)
     plt.savefig(plot_name)
 
   def save_as_csv(self, results: pd.DataFrame, csvfile: str='../deliverables/output.csv'):
@@ -138,7 +141,8 @@ class FacialExpressionAnalysis(object):
 if __name__ == '__main__':
   obj = FacialExpressionAnalysis()
   obj.set_detector()
-  results = obj.detect_video_with_images(video_path='../assets/aho.mp4', interval_in_sec=5.0)
-  # results = obj.read_results(csvfile='../deliverables/output.csv')
-  obj.make_plots(results=results, columns=['anger', 'disgust', 'fear', 'happiness', 'sadness', 'surprise', 'neutral'])
-  obj.save_as_csv(results=results, csvfile='../deliverables/output.csv')
+  # results = obj.detect_video_with_images(video_path='../assets/aho.mp4', interval_in_sec=5.0)
+  results = obj.read_results(csvfile='../deliverables/output.csv')
+  obj.make_plots(results=results, columns=['anger', 'disgust', 'fear', 'happiness', 'sadness', 'surprise', 'neutral'], plot_name='../deliverables/emotions.png')
+  obj.make_plots(results=results, columns=['Pitch', 'Roll', 'Yaw'], plot_name='../deliverables/poses.png')
+  # obj.save_as_csv(results=results, csvfile='../deliverables/output.csv')
