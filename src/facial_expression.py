@@ -21,6 +21,8 @@ from feat import Detector
 from feat.data import Fex
 from feat.utils.io import read_feat
 
+from utils import MovingAverage
+
 class FacialExpressionAnalysis(object):
   def __init__(self) -> None:
     self.detector = None
@@ -121,7 +123,7 @@ class FacialExpressionAnalysis(object):
     Xs = results['frame']
     for column in columns:
       Ys = results[column]
-      # Ys = self.get_moving_average(values=Ys, window=10)
+      Ys = MovingAverage(array=Ys, window_size=10)
       plt.plot(Xs, Ys, label=column)
 
     plt.title('Expectations')
