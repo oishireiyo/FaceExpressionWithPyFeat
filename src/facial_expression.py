@@ -26,11 +26,12 @@ from utils import MovingAverage
 class FacialExpressionAnalysis(object):
   def __init__(self) -> None:
     self.detector = None
-    self.face_model='retinaface'
-    self.landmark_model='mobilenet'
-    self.au_model='svm'
-    self.emotion_model='resmasknet'
-    self.facepose_model='img2pose'
+    self.face_model = 'retinaface'
+    self.landmark_model = 'mobilenet'
+    self.au_model = 'svm'
+    self.emotion_model = 'resmasknet'
+    self.facepose_model = 'img2pose'
+    self.interval_in_sec = 1.0
 
   def set_face_model(self, face_model: str='retinaface') -> None:
     self.face_model = face_model
@@ -86,6 +87,7 @@ class FacialExpressionAnalysis(object):
       logger.error('No such video file was found.')
       sys.exit(1)
 
+    self.interval_in_sec = interval_in_sec
     video_capture = cv2.VideoCapture(video_path)
     nframes = int(video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
     fps = math.ceil(video_capture.get(cv2.CAP_PROP_FPS))
@@ -117,13 +119,15 @@ class FacialExpressionAnalysis(object):
   def get_moving_average(self, values: pd.Series, window: int):
     return values.rolling(window=window, min_periods=1).mean()
 
-  def make_plots(self, results: pd.DataFrame, columns: list[str], plot_name: str) -> None:
+  def make_plots(self, results: pd.DataFrame, columns: list[str], plot_name: str, moving_average_in_sec: float=1.0) -> None:
+    window_size = math.ceil(moving_average_in_sec / self.interval_in_sec)
+
     plt.figure()
 
     Xs = results['frame']
     for column in columns:
       Ys = results[column]
-      Ys = MovingAverage(array=Ys, window_size=10)
+      Ys = MovingAverage(array=Ys, window_size=window_size)
       plt.plot(Xs, Ys, label=column)
 
     plt.title('Expectations')
@@ -143,8 +147,18 @@ class FacialExpressionAnalysis(object):
 if __name__ == '__main__':
   obj = FacialExpressionAnalysis()
   obj.set_detector()
-  # results = obj.detect_video_with_images(video_path='../assets/aho.mp4', interval_in_sec=5.0)
-  results = obj.read_results(csvfile='../deliverables/output.csv')
-  obj.make_plots(results=results, columns=['anger', 'disgust', 'fear', 'happiness', 'sadness', 'surprise', 'neutral'], plot_name='../deliverables/emotions.png')
-  obj.make_plots(results=results, columns=['Pitch', 'Roll', 'Yaw'], plot_name='../deliverables/poses.png')
-  # obj.save_as_csv(results=results, csvfile='../deliverables/output.csv')
+  results = obj.detect_video_with_images(video_path='../assets/tako.mp4', interval_in_sec=1.0)
+  # results = obj.read_results(csvfile='../deliverables/output.csv')
+  obj.make_plots(
+    results=results,
+    columns=['anger', 'disgust', 'fear', 'happiness', 'sadness', 'surprise', 'neutral'],
+    plot_name='../deliverables/emotions.png',
+    moving_average_in_sec=30.0,
+  )
+  obj.make_plots(
+    results=results,
+    columns=['Pitch', 'Roll', 'Yaw'],
+    plot_name='../deliverables/poses.png',
+    moving_average_in_sec=30.0,
+  )
+  obj.save_as_csv(results=results, csvfile='../deliverables/output.csv')

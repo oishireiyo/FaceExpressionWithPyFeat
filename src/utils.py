@@ -23,7 +23,7 @@ def MovingAverage(array: np.ndarray, window_size: int, mode: str='valid', same_l
   In case `valid` is given and same length of numpy array is expected as return value, same_length need to be True.
   '''
   if mode == 'valid' and same_length:
-    array = np.pad(array, [(window_size-1, 0)], 'edge')
+    array = np.pad(array, [(0, window_size-1)], 'edge')
 
   window = np.ones(window_size) / window_size
   array_average = np.convolve(array, window, mode=mode)
