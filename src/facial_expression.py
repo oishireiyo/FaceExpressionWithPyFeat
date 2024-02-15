@@ -21,6 +21,7 @@ from feat import Detector
 from feat.data import Fex
 from feat.utils.io import read_feat
 
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from utils import MovingAverage
 
 class FacialExpressionAnalysis(object):
