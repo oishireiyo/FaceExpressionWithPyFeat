@@ -91,6 +91,7 @@ class FacialExpressionAnalysis(object):
     self.interval_in_frame = interval_in_frame
     video_capture = cv2.VideoCapture(video_path)
     nframes = int(video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
+
     results = Fex()
     for iframe in range(0, nframes, interval_in_frame):
       image_path = '../deliverables/' + self.remove_appendix(video_path) + '_frame_%d.png' % (iframe)
@@ -119,7 +120,7 @@ class FacialExpressionAnalysis(object):
     return values.rolling(window=window, min_periods=1).mean()
 
   def make_plots(self, results: pd.DataFrame, columns: list[str], plot_name: str, moving_average_in_frame: int=300) -> None:
-    window_size = math.ceil(moving_average_in_sec / self.interval_in_frame)
+    window_size = math.ceil(moving_average_in_frame / self.interval_in_frame)
 
     plt.figure()
 
@@ -146,18 +147,18 @@ class FacialExpressionAnalysis(object):
 if __name__ == '__main__':
   obj = FacialExpressionAnalysis()
   obj.set_detector()
-  results = obj.detect_video_with_images(video_path='../assets/tako.mp4', interval_in_frame=30)
+  results = obj.detect_video_with_images(video_path='../../../assets/disgust1.mp4', interval_in_frame=30)
   # results = obj.read_results(csvfile='../deliverables/output.csv')
   obj.make_plots(
     results=results,
     columns=['anger', 'disgust', 'fear', 'happiness', 'sadness', 'surprise', 'neutral'],
     plot_name='../deliverables/emotions.png',
-    moving_average_in_sec=30.0,
+    moving_average_in_frame=30.0,
   )
   obj.make_plots(
     results=results,
     columns=['Pitch', 'Roll', 'Yaw'],
     plot_name='../deliverables/poses.png',
-    moving_average_in_sec=30.0,
+    moving_average_in_frame=30.0,
   )
   obj.save_as_csv(results=results, csvfile='../deliverables/output.csv')
