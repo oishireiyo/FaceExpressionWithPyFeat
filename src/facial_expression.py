@@ -32,7 +32,7 @@ class FacialExpressionAnalysis(object):
     self.au_model = 'svm'
     self.emotion_model = 'resmasknet'
     self.facepose_model = 'img2pose'
-    self.interval_in_sec = 1.0
+    self.interval_in_frame = 30
 
   def set_face_model(self, face_model: str='retinaface') -> None:
     self.face_model = face_model
@@ -83,18 +83,16 @@ class FacialExpressionAnalysis(object):
     if ret: cv2.imwrite(image_path, frame)
     return ret
 
-  def detect_video_with_images(self, video_path: str, interval_in_sec: float=1.0) -> pd.DataFrame:
+  def detect_video_with_images(self, video_path: str, interval_in_frame: int=30) -> pd.DataFrame:
     if not os.path.isfile(video_path):
       logger.error('No such video file was found.')
       sys.exit(1)
 
-    self.interval_in_sec = interval_in_sec
+    self.interval_in_frame = interval_in_frame
     video_capture = cv2.VideoCapture(video_path)
     nframes = int(video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
-    fps = math.ceil(video_capture.get(cv2.CAP_PROP_FPS))
-
     results = Fex()
-    for iframe in range(0, nframes, int(fps * interval_in_sec)):
+    for iframe in range(0, nframes, interval_in_frame):
       image_path = '../deliverables/' + self.remove_appendix(video_path) + '_frame_%d.png' % (iframe)
       if self.read_frame(video_capture=video_capture, iframe=iframe, image_path=image_path):
         _results = self.detect_image(image_path=image_path)
@@ -120,8 +118,8 @@ class FacialExpressionAnalysis(object):
   def get_moving_average(self, values: pd.Series, window: int):
     return values.rolling(window=window, min_periods=1).mean()
 
-  def make_plots(self, results: pd.DataFrame, columns: list[str], plot_name: str, moving_average_in_sec: float=1.0) -> None:
-    window_size = math.ceil(moving_average_in_sec / self.interval_in_sec)
+  def make_plots(self, results: pd.DataFrame, columns: list[str], plot_name: str, moving_average_in_frame: int=300) -> None:
+    window_size = math.ceil(moving_average_in_sec / self.interval_in_frame)
 
     plt.figure()
 
@@ -148,7 +146,7 @@ class FacialExpressionAnalysis(object):
 if __name__ == '__main__':
   obj = FacialExpressionAnalysis()
   obj.set_detector()
-  results = obj.detect_video_with_images(video_path='../assets/tako.mp4', interval_in_sec=1.0)
+  results = obj.detect_video_with_images(video_path='../assets/tako.mp4', interval_in_frame=30)
   # results = obj.read_results(csvfile='../deliverables/output.csv')
   obj.make_plots(
     results=results,
